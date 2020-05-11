@@ -1,0 +1,15 @@
+{
+    "name": "hantaohuang/ppp",
+    "description": "install PHP extensions in a more user-friendly way",
+    "type": "project",
+    "authors": [
+        {
+            "name": "codinghuang",
+            "email": "2812240764@qq.com"
+        }
+    ],
+    "require": {
+        "league/climate": "^3.5"
+    },
+    "bin": ["bin/ppp"]
+}

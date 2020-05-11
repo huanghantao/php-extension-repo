@@ -1,0 +1,82 @@
+#!/usr/bin/env php
+<?php
+
+use League\CLImate\CLImate;
+
+! defined('BASE_PATH') && define('BASE_PATH', dirname(__DIR__, 1));
+
+require BASE_PATH . '/vendor/autoload.php';
+
+function shellExecEx(string $command, bool $flag = true): string
+{
+    $ret = shell_exec($command);
+    if ($flag) {
+        $ret = trim($ret);
+    }
+    return $ret;
+}
+
+function askExtension(CLImate $climate): string
+{
+    $input = $climate->green()->input('What extensions would you like to install?');
+    $response = $input->prompt();
+    if (! is_dir($response)) {
+        $climate->error("Do not have extension [{$response}]");
+        exit(1);
+    }
+    return $response;
+}
+
+function askVersion(CLImate $climate, string $extensionName): string
+{
+    $resource = opendir($extensionName);
+    while ($dir = readdir($resource)) {
+        if ($dir == '.' || $dir == '..') {
+            continue;
+        }
+        $dirs[] = $dir;
+    }
+
+    $input = $climate->green()->radio('What version would you like to install?', $dirs);
+    return $input->prompt();
+}
+
+function checkMachine(CLImate $climate, $extensionName, $extensionVersion): string
+{
+    $OS = shellExecEx('uname -s');
+    $CPU = shellExecEx('uname -m');
+
+    $extensionPath = "{$extensionName}/{$extensionVersion}/{$OS}-{$CPU}";
+    if (! file_exists($extensionPath)) {
+        $climate->error('The extension does not support the current machine');
+        exit(1);
+    }
+
+    return $extensionPath;
+}
+
+$PHP = shellExecEx('which php');
+
+$climate = new CLImate();
+
+$PHP_CONFIG = shellExecEx('which php-config');
+
+if (! $PHP_CONFIG) {
+    $climate->error('Do not have php-config!');
+    exit(1);
+}
+
+$INSTALL_DIR = shellExecEx("{$PHP_CONFIG} --extension-dir");
+
+$extensionName = askExtension($climate);
+$extensionVersion = askVersion($climate, $extensionName);
+
+$extensionPath = checkMachine($climate, $extensionName, $extensionVersion);
+
+$climate->lightGray("Install extension to {$INSTALL_DIR}/ ...");
+if (! copy($extensionPath, "{$INSTALL_DIR}/{$extensionName}.so")) {
+    $climate->error('Install extension error!');
+    exit(1);
+}
+
+$climate->yellow('Install extension success!');
