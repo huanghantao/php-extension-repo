@@ -16,11 +16,24 @@ function shellExecEx(string $command, bool $flag = true): string
     return $ret;
 }
 
+function showExtension(CLImate $climate)
+{
+    $resource = opendir('extension');
+    while ($dir = readdir($resource)) {
+        if ($dir == '.' || $dir == '..') {
+            continue;
+        }
+        $dirs[] = $dir;
+    }
+
+    $climate->green('You have the following extensions:')->columns($dirs);
+}
+
 function askExtension(CLImate $climate): string
 {
     $input = $climate->green()->input('What extensions would you like to install?');
     $response = $input->prompt();
-    if (! is_dir($response)) {
+    if (! is_dir("extension/$response")) {
         $climate->error("Do not have extension [{$response}]");
         exit(1);
     }
@@ -29,7 +42,7 @@ function askExtension(CLImate $climate): string
 
 function askVersion(CLImate $climate, string $extensionName): string
 {
-    $resource = opendir($extensionName);
+    $resource = opendir("extension/$extensionName");
     while ($dir = readdir($resource)) {
         if ($dir == '.' || $dir == '..') {
             continue;
@@ -46,7 +59,7 @@ function checkMachine(CLImate $climate, $extensionName, $extensionVersion): stri
     $OS = shellExecEx('uname -s');
     $CPU = shellExecEx('uname -m');
 
-    $extensionPath = "{$extensionName}/{$extensionVersion}/{$OS}-{$CPU}";
+    $extensionPath = "extension/{$extensionName}/{$extensionVersion}/{$OS}-{$CPU}";
     if (! file_exists($extensionPath)) {
         $climate->error('The extension does not support the current machine');
         exit(1);
@@ -67,6 +80,8 @@ if (! $PHP_CONFIG) {
 }
 
 $INSTALL_DIR = shellExecEx("{$PHP_CONFIG} --extension-dir");
+
+showExtension($climate);
 
 $extensionName = askExtension($climate);
 $extensionVersion = askVersion($climate, $extensionName);
