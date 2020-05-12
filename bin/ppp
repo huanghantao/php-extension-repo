@@ -142,4 +142,4 @@ class PPP
     }
 }
 
-(new PPP('extension'))->run();
+(new PPP('local_repo'))->run();
