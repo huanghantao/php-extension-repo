@@ -16,6 +16,8 @@ class PPP
 
     /**
      * @var string
+     *
+     * the address of the extension repo, it can be remote or local
      */
     protected $extensionRepo;
 
@@ -29,15 +31,38 @@ class PPP
      */
     protected $extensionVersion;
 
+    /**
+     * @var string
+     *
+     * the extension binary file path of local repo
+     */
     protected $extensionPath;
 
     /**
      * @var string
+     *
+     * the extension header files path of local repo
+     */
+    protected $includePath;
+
+    /**
+     * @var string
+     *
+     * the path which the extension binary file need to be installed
      */
     protected $extensionDir;
 
     /**
      * @var string
+     *
+     * the path which the extension header files need to be installed
+     */
+    protected $includeDir;
+
+    /**
+     * @var string
+     *
+     * the absolute path of php-config command
      */
     protected $phpConfig;
 
@@ -68,6 +93,49 @@ class PPP
         $this->askVersion();
         $this->checkMachine();
         $this->installExtension();
+    }
+
+    /**
+     * removes files and non-empty directories.
+     */
+    public static function rrmdir(string $dir)
+    {
+        if (is_dir($dir)) {
+            $files = scandir($dir);
+            foreach ($files as $file) {
+                if ($file != '.' && $file != '..') {
+                    self::rrmdir("{$dir}/{$file}");
+                }
+            }
+            rmdir($dir);
+        } elseif (file_exists($dir)) {
+            unlink($dir);
+        }
+    }
+
+    /**
+     * copies $src/files and non-empty directories to $dst/.
+     */
+    public static function rcopy(string $src, string $dst)
+    {
+        if (file_exists($dst)) {
+            self::rrmdir($dst);
+        }
+        if (is_dir($src)) {
+            mkdir($dst);
+            $files = scandir($src);
+            foreach ($files as $file) {
+                if ($file != '.' && $file != '..') {
+                    self::rcopy("{$src}/{$file}", "{$dst}/{$file}");
+                }
+            }
+        } elseif (file_exists($src)) {
+            if (! copy($src, $dst)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     protected function askExtension(): void
@@ -107,6 +175,7 @@ class PPP
         }
 
         $this->extensionPath = $extensionPath;
+        $this->includePath = "{$this->extensionRepo}/{$this->extensionName}/{$this->extensionVersion}/include_dir";
     }
 
     protected function installExtension(): void
@@ -118,6 +187,16 @@ class PPP
         }
 
         $this->climate->yellow('Install extension success!');
+
+        if (file_exists($this->includePath)) {
+            $this->climate->lightGray("Install header to {$this->includeDir}/ ...");
+            if (! self::rcopy($this->includePath, "{$this->includeDir}/{$this->extensionName}")) {
+                $this->climate->error('Install header error!');
+                exit(1);
+            }
+
+            $this->climate->yellow('Install header success!');
+        }
     }
 
     protected function shellExecEx(string $command, bool $flag = true): string
@@ -139,6 +218,7 @@ class PPP
         }
 
         $this->extensionDir = $this->shellExecEx("{$this->phpConfig} --extension-dir");
+        $this->includeDir = $this->shellExecEx("{$this->phpConfig} --include-dir") . '/ext';
     }
 }
 
