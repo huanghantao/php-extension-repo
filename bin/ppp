@@ -34,7 +34,7 @@ class PPP
     /**
      * @var string
      */
-    protected $installDir;
+    protected $extensionDir;
 
     /**
      * @var string
@@ -111,8 +111,8 @@ class PPP
 
     protected function installExtension(): void
     {
-        $this->climate->lightGray("Install extension to {$this->installDir}/ ...");
-        if (! copy($this->extensionPath, "{$this->installDir}/{$this->extensionName}.so")) {
+        $this->climate->lightGray("Install extension to {$this->extensionDir}/ ...");
+        if (! copy($this->extensionPath, "{$this->extensionDir}/{$this->extensionName}.so")) {
             $this->climate->error('Install extension error!');
             exit(1);
         }
@@ -138,7 +138,7 @@ class PPP
             exit(1);
         }
 
-        $this->installDir = $this->shellExecEx("{$this->phpConfig} --extension-dir");
+        $this->extensionDir = $this->shellExecEx("{$this->phpConfig} --extension-dir");
     }
 }
 
