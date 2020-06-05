@@ -159,6 +159,8 @@ class PPP
             $dirs[] = $dir;
         }
 
+        arsort($dirs);
+
         $input = $this->climate->green()->radio('What version would you like to install?', $dirs);
         $this->extensionVersion = $input->prompt();
     }
